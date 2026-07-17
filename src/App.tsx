@@ -8,15 +8,22 @@ const appWindow = getCurrentWindow();
 type Spark = { id: number; emoji: string; tx: number; ty: number };
 const SPARK_EMOJIS = ["✨", "⭐", "🌟", "💫"];
 
-// 配色
-const FUR = "#F2A65A";
-const BELLY = "#FCE3C6";
-const EAR = "#F4A9C0";
+// 固定配色
 const HAT = "#6C4AB6";
 const BRIM = "#553B94";
 const NOSE = "#E86FA0";
 const EYE = "#3B3846";
 const STAR = "M0 -12 L2.94 -4.05 L11.41 -3.71 L4.76 1.55 L7.05 9.71 L0 5 L-7.05 9.71 L-4.76 1.55 L-11.41 -3.71 L-2.94 -4.05 Z";
+
+// 皮肤（毛色 / 肚子 / 耳朵内侧），换肤魔法在这里循环
+type Skin = { name: string; fur: string; belly: string; ear: string };
+const SKINS: Skin[] = [
+  { name: "橘猫", fur: "#F2A65A", belly: "#FCE3C6", ear: "#F4A9C0" },
+  { name: "黑猫", fur: "#4A4658", belly: "#6B6579", ear: "#C88BA5" },
+  { name: "白猫", fur: "#F1ECE2", belly: "#FFFFFF", ear: "#F4A9C0" },
+  { name: "灰猫", fur: "#9AA5B1", belly: "#CBD2D9", ear: "#E7A9BE" },
+  { name: "粉猫", fur: "#F3C4D6", belly: "#FFF1F6", ear: "#FF9DC4" },
+];
 
 type Pose = "casual" | "battle" | "sleep";
 const POSES: { key: Pose; icon: string; label: string }[] = [
@@ -38,8 +45,9 @@ const OUTFITS: { key: OutfitKind; icon: string; label: string }[] = [
 const pick = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
 const GOOD_LUCK = ["好运降临中…… 🍀", "今天会顺到起飞 🚀", "锦鲤附体！🐟✨"];
 
-type Spell = { icon: string; label: string; big?: boolean; run: () => string };
+type Spell = { icon: string; label: string; big?: boolean; skin?: boolean; run?: () => string };
 const SPELLS: Spell[] = [
+  { icon: "🎨", label: "换肤", skin: true },
   { icon: "🔮", label: "专注", run: () => "专注咒语已生效，冲鸭！" },
   { icon: "🍀", label: "好运", run: () => pick(GOOD_LUCK) },
   {
@@ -161,6 +169,8 @@ type Wheel = "spell" | "pose" | "outfit" | null;
 function App() {
   const [pose, setPose] = useState<Pose>("casual");
   const [outfit, setOutfit] = useState<OutfitKind>("wizard");
+  const [skin, setSkin] = useState(0);
+  const sk = SKINS[skin];
   const [casting, setCasting] = useState(false);
   const [sparks, setSparks] = useState<Spark[]>([]);
   const [bubble, setBubble] = useState<string | null>(null);
@@ -202,7 +212,13 @@ function App() {
     setWheel(null);
     doSparkles(spell.big);
     poseOnce(600);
-    showBubble(spell.run());
+    if (spell.skin) {
+      const next = (skin + 1) % SKINS.length;
+      setSkin(next);
+      showBubble(`换上「${SKINS[next].name}」皮肤！🎨`);
+    } else if (spell.run) {
+      showBubble(spell.run());
+    }
   }
 
   function selectPose(p: Pose) {
@@ -278,20 +294,20 @@ function App() {
           {pose === "casual" && (
             <>
               <g className="tail">
-                <path d="M148 158 Q188 150 180 112 Q176 92 162 100" fill="none" stroke={FUR} strokeWidth="14" strokeLinecap="round" />
+                <path d="M148 158 Q188 150 180 112 Q176 92 162 100" fill="none" stroke={sk.fur} strokeWidth="14" strokeLinecap="round" />
               </g>
-              <ellipse cx="100" cy="152" rx="45" ry="40" fill={FUR} />
-              <ellipse cx="100" cy="160" rx="23" ry="24" fill={BELLY} />
-              <ellipse cx="138" cy="152" rx="10" ry="8" fill={FUR} />
+              <ellipse cx="100" cy="152" rx="45" ry="40" fill={sk.fur} />
+              <ellipse cx="100" cy="160" rx="23" ry="24" fill={sk.belly} />
+              <ellipse cx="138" cy="152" rx="10" ry="8" fill={sk.fur} />
               <Wand x1={138} y1={152} x2={172} y2={74} gx={174} gy={68} />
               <g className="head">
-                <path d="M62 60 L54 26 L92 50 Z" fill={FUR} />
-                <path d="M138 60 L146 26 L108 50 Z" fill={FUR} />
-                <path d="M67 54 L62 37 L84 50 Z" fill={EAR} />
-                <path d="M133 54 L138 37 L116 50 Z" fill={EAR} />
-                <circle cx="100" cy="90" r="45" fill={FUR} />
-                <ellipse cx="72" cy="98" rx="7" ry="4" fill={EAR} opacity="0.5" />
-                <ellipse cx="128" cy="98" rx="7" ry="4" fill={EAR} opacity="0.5" />
+                <path d="M62 60 L54 26 L92 50 Z" fill={sk.fur} />
+                <path d="M138 60 L146 26 L108 50 Z" fill={sk.fur} />
+                <path d="M67 54 L62 37 L84 50 Z" fill={sk.ear} />
+                <path d="M133 54 L138 37 L116 50 Z" fill={sk.ear} />
+                <circle cx="100" cy="90" r="45" fill={sk.fur} />
+                <ellipse cx="72" cy="98" rx="7" ry="4" fill={sk.ear} opacity="0.5" />
+                <ellipse cx="128" cy="98" rx="7" ry="4" fill={sk.ear} opacity="0.5" />
                 <g className="eyes">
                   <ellipse cx="84" cy="88" rx="5.5" ry="7.5" fill={EYE} />
                   <ellipse cx="116" cy="88" rx="5.5" ry="7.5" fill={EYE} />
@@ -314,19 +330,19 @@ function App() {
             <>
               <ellipse className="aura" cx="100" cy="130" rx="82" ry="66" fill="#FFC24A" />
               <g className="tail">
-                <path d="M148 150 Q182 128 178 92 Q177 80 168 88" fill="none" stroke={FUR} strokeWidth="14" strokeLinecap="round" />
+                <path d="M148 150 Q182 128 178 92 Q177 80 168 88" fill="none" stroke={sk.fur} strokeWidth="14" strokeLinecap="round" />
               </g>
-              <ellipse cx="100" cy="152" rx="45" ry="40" fill={FUR} />
-              <ellipse cx="100" cy="160" rx="23" ry="24" fill={BELLY} />
-              <ellipse cx="128" cy="128" rx="10" ry="8" fill={FUR} />
+              <ellipse cx="100" cy="152" rx="45" ry="40" fill={sk.fur} />
+              <ellipse cx="100" cy="160" rx="23" ry="24" fill={sk.belly} />
+              <ellipse cx="128" cy="128" rx="10" ry="8" fill={sk.fur} />
               <Wand x1={128} y1={128} x2={158} y2={40} gx={160} gy={34} />
               <circle cx="160" cy="34" r="20" fill="none" stroke="#FFE38A" strokeWidth="2" opacity="0.7" />
               <g className="head">
-                <path d="M62 60 L52 22 L92 48 Z" fill={FUR} />
-                <path d="M138 60 L148 22 L108 48 Z" fill={FUR} />
-                <path d="M67 53 L60 33 L84 48 Z" fill={EAR} />
-                <path d="M133 53 L140 33 L116 48 Z" fill={EAR} />
-                <circle cx="100" cy="90" r="45" fill={FUR} />
+                <path d="M62 60 L52 22 L92 48 Z" fill={sk.fur} />
+                <path d="M138 60 L148 22 L108 48 Z" fill={sk.fur} />
+                <path d="M67 53 L60 33 L84 48 Z" fill={sk.ear} />
+                <path d="M133 53 L140 33 L116 48 Z" fill={sk.ear} />
+                <circle cx="100" cy="90" r="45" fill={sk.fur} />
                 <g stroke="#4a3b2b" strokeWidth="3" strokeLinecap="round">
                   <path d="M72 82 L92 90" />
                   <path d="M128 82 L108 90" />
@@ -353,16 +369,16 @@ function App() {
               <rect x="22" y="158" width="156" height="32" rx="12" fill="#5C7FB0" />
               <rect x="22" y="158" width="156" height="9" rx="4" fill="#8AAAD6" />
               <ellipse cx="150" cy="162" rx="30" ry="15" fill="#FFFFFF" />
-              <ellipse cx="92" cy="162" rx="56" ry="20" fill={FUR} />
+              <ellipse cx="92" cy="162" rx="56" ry="20" fill={sk.fur} />
               <path d="M38 162 Q80 152 122 162 L122 186 Q80 192 38 186 Z" fill="#7FA8D0" />
               <path d="M38 162 Q80 152 122 162 L122 169 Q80 159 38 169 Z" fill="#A9C6E6" />
-              <ellipse cx="52" cy="176" rx="8" ry="5" fill={FUR} />
+              <ellipse cx="52" cy="176" rx="8" ry="5" fill={sk.fur} />
               <g>
-                <path d="M136 132 L131 116 L150 130 Z" fill={FUR} />
-                <path d="M166 132 L171 116 L152 130 Z" fill={FUR} />
-                <circle cx="151" cy="146" r="26" fill={FUR} />
-                <ellipse cx="140" cy="152" rx="5" ry="3" fill={EAR} opacity="0.5" />
-                <ellipse cx="162" cy="152" rx="5" ry="3" fill={EAR} opacity="0.5" />
+                <path d="M136 132 L131 116 L150 130 Z" fill={sk.fur} />
+                <path d="M166 132 L171 116 L152 130 Z" fill={sk.fur} />
+                <circle cx="151" cy="146" r="26" fill={sk.fur} />
+                <ellipse cx="140" cy="152" rx="5" ry="3" fill={sk.ear} opacity="0.5" />
+                <ellipse cx="162" cy="152" rx="5" ry="3" fill={sk.ear} opacity="0.5" />
                 <path d="M139 145 Q143 150 147 145" fill="none" stroke={EYE} strokeWidth="2" strokeLinecap="round" />
                 <path d="M154 145 Q158 150 162 145" fill="none" stroke={EYE} strokeWidth="2" strokeLinecap="round" />
                 <path d="M149 152 L153 152 L151 155 Z" fill={NOSE} />
